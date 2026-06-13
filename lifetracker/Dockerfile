@@ -1,5 +1,7 @@
-ARG BUILD_FROM
-FROM ${BUILD_FROM}
+# Pin a Debian base directly (HA's default add-on base is Alpine/apk; build.yaml
+# build_from is deprecated). Debian/glibc keeps the better-sqlite3 native build
+# simple. HA passes a BUILD_FROM build-arg that we intentionally ignore.
+FROM node:22-bookworm-slim
 
 # Tools: git (fetch app), jq (read add-on options), build-essential + python3
 # (compile better-sqlite3 native module).

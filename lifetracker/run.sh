@@ -18,6 +18,7 @@ export NODE_ENV=production
 # SUPERVISOR_TOKEN is injected by Supervisor (homeassistant_api: true) → live data.
 
 # Start with no places; add them in-app (Live map → Places → + Add).
+mkdir -p /data
 [ -f "$PLACES_FILE" ] || echo '[]' > "$PLACES_FILE"
 
 exec npm run start
