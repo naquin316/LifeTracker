@@ -10,12 +10,15 @@ export default function Sidebar({
   selected,
   now,
   error,
+  live,
   geofences,
   placing,
   onToggle,
   onSelect,
   onAddPlace,
   onDeletePlace,
+  onSelectPlace,
+  editingIndex,
 }: {
   locations: CurrentLocation[];
   members: MemberInfo[];
@@ -23,12 +26,15 @@ export default function Sidebar({
   selected: string | null;
   now: number;
   error: string | null;
+  live: boolean;
   geofences: Geofence[];
   placing: boolean;
   onToggle: (member: string) => void;
   onSelect: (member: string) => void;
   onAddPlace: () => void;
   onDeletePlace: (index: number) => void;
+  onSelectPlace: (index: number) => void;
+  editingIndex: number | null;
 }) {
   const byMember = new Map(locations.map((l) => [l.member, l]));
   // Show every known member, even if a current fix is missing.
@@ -40,6 +46,17 @@ export default function Sidebar({
       <div className="flex items-center justify-between px-4 py-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted">
           People · {names.length}
+        </span>
+        <span
+          title={live ? "Live from Home Assistant" : "From the 15-min history DB"}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+            live ? "bg-real/15 text-real" : "bg-panel-2 text-muted"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${live ? "bg-real" : "bg-muted"}`}
+          />
+          {live ? "live" : "cached"}
         </span>
       </div>
 
@@ -154,17 +171,25 @@ export default function Sidebar({
           {geofences.map((g, i) => (
             <li
               key={`${g.name}-${i}`}
-              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-panel-2/60"
+              className={`group flex items-center gap-2 rounded-md px-2 py-1.5 ${
+                editingIndex === i ? "bg-panel-2" : "hover:bg-panel-2/60"
+              }`}
             >
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent/15 text-accent">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">
-                  <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
-                </svg>
-              </span>
-              <span className="min-w-0 flex-1 truncate text-sm">{g.name}</span>
-              <span className="shrink-0 text-[11px] tabular-nums text-muted">
-                {g.radiusM}m
-              </span>
+              <button
+                onClick={() => onSelectPlace(i)}
+                title="Zoom to & edit"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent/15 text-accent">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">
+                    <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm">{g.name}</span>
+                <span className="shrink-0 text-[11px] tabular-nums text-muted">
+                  {g.radiusM}m
+                </span>
+              </button>
               <button
                 onClick={() => onDeletePlace(i)}
                 aria-label={`Delete ${g.name}`}

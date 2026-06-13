@@ -1,7 +1,7 @@
 import Nav from "./components/Nav";
 import LiveMap from "./components/LiveMap";
 import NoKeyNotice from "./components/NoKeyNotice";
-import { hasBrowserKey } from "./components/maps";
+import { getMapsConfig } from "@/lib/maps-config";
 
 function Legend() {
   return (
@@ -16,11 +16,18 @@ function Legend() {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
+  const { browserKey, mapId } = getMapsConfig();
   return (
     <div className="flex h-full flex-col">
       <Nav right={<Legend />} />
-      {hasBrowserKey() ? <LiveMap /> : <NoKeyNotice />}
+      {browserKey ? (
+        <LiveMap browserKey={browserKey} mapId={mapId} />
+      ) : (
+        <NoKeyNotice />
+      )}
     </div>
   );
 }

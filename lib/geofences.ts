@@ -7,8 +7,8 @@ import type { Geofence } from "./types";
 // (Live map → "+ Add place") or by editing data/places.json directly:
 //
 //   [
-//     { "name": "Home",  "lat": 29.66208, "lon": -98.14260, "radiusM": 130 },
-//     { "name": "Work",  "lat": 29.70,    "lon": -98.10,    "radiusM": 150 }
+//     { "name": "Home",  "lat": 30.2672, "lon": -97.7431, "radiusM": 130 },
+//     { "name": "Work",  "lat": 30.30,   "lon": -97.70,   "radiusM": 150 }
 //   ]
 //
 // Any fix inside a geofence is named by it (no Google call), so it fixes

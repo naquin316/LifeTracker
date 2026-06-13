@@ -138,6 +138,20 @@ export function getPointsInRange(
   return rows.map(toPoint);
 }
 
+/** Map of HA device_tracker entity_id → member name (for live state lookup). */
+export function getEntityMemberMap(): Record<string, string> {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT member, entity_id FROM location
+       WHERE entity_id IS NOT NULL AND member IS NOT NULL`,
+    )
+    .all() as { member: string; entity_id: string }[];
+  const map: Record<string, string> = {};
+  for (const r of rows) map[r.entity_id] = r.member;
+  return map;
+}
+
 /** All fixes for a member (used by the predictor for historical patterns). */
 export function getAllPoints(member: string): LocationPoint[] {
   const db = getDb();

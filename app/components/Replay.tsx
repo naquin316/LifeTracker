@@ -11,7 +11,7 @@ import type { MemberInfo, Move, Stay, Trip } from "@/lib/types";
 import { memberColor } from "@/lib/colors";
 import { clockTime, coords, dateTime, formatDuration } from "@/lib/format";
 import { buildTimeline, positionAt } from "@/lib/timeline";
-import { BROWSER_KEY, DEFAULT_CENTER, MAP_ID } from "./maps";
+import { DEFAULT_CENTER } from "./maps";
 import { ConfidenceBadge } from "./ui";
 
 // Playback speeds: trip-seconds advanced per real second.
@@ -41,7 +41,13 @@ function fromLocalInput(v: string) {
   return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
 }
 
-export default function Replay() {
+export default function Replay({
+  browserKey,
+  mapId,
+}: {
+  browserKey: string;
+  mapId: string;
+}) {
   const [members, setMembers] = useState<MemberInfo[]>([]);
   const [member, setMember] = useState("");
   const nowSec = Math.floor(Date.now() / 1000);
@@ -257,9 +263,9 @@ export default function Replay() {
             </svg>
             Controls
           </button>
-          <APIProvider apiKey={BROWSER_KEY}>
+          <APIProvider apiKey={browserKey}>
             <Map
-              mapId={MAP_ID}
+              mapId={mapId}
               defaultCenter={{
                 lat: DEFAULT_CENTER.lat,
                 lng: DEFAULT_CENTER.lon,

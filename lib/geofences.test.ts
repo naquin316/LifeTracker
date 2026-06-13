@@ -10,7 +10,7 @@ beforeEach(() => {
   fs.writeFileSync(
     tmp,
     JSON.stringify([
-      { name: "Home", lat: 29.662078, lon: -98.142605, radiusM: 130 },
+      { name: "Home", lat: 30.2672, lon: -97.7431, radiusM: 130 },
     ]),
   );
   process.env.PLACES_FILE = tmp;
@@ -24,9 +24,9 @@ afterEach(() => {
 describe("matchGeofence", () => {
   it("names a point inside the fence", () => {
     // ~30m from center → inside the 130m radius.
-    expect(matchGeofence(29.66232, -98.142605)?.name).toBe("Home");
+    expect(matchGeofence(30.2675, -97.7431)?.name).toBe("Home");
   });
   it("returns null well outside the fence", () => {
-    expect(matchGeofence(29.7, -98.1)).toBeNull();
+    expect(matchGeofence(30.30, -97.70)).toBeNull();
   });
 });

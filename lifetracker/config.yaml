@@ -1,0 +1,27 @@
+name: LifeTracker
+slug: lifetracker
+version: "1.0.0"
+description: Family location map with place-guessing and trip replay over the HA Life360 data
+url: https://github.com/naquin316/LifeTracker
+arch:
+  - amd64
+init: false
+# Web UI port (also what the Cloudflare Tunnel routes to).
+ports:
+  "3939/tcp": 3939
+ports_description:
+  "3939/tcp": LifeTracker web UI
+# Read the Life360 history DB written by the logger.
+map:
+  - share:rw
+# Provides SUPERVISOR_TOKEN + access to the HA Core API for near-real-time
+# device_tracker.life360_* positions (no manual token needed).
+homeassistant_api: true
+options:
+  google_browser_key: ""
+  google_server_key: ""
+  google_map_id: ""
+schema:
+  google_browser_key: str?
+  google_server_key: str?
+  google_map_id: str?

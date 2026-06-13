@@ -100,8 +100,8 @@ circles on the map.
 
 ```json
 [
-  { "name": "Home", "lat": 29.662078, "lon": -98.142605, "radiusM": 130, "address": "1029 Sixtree Dr, New Braunfels" },
-  { "name": "Work", "lat": 29.70,     "lon": -98.10,     "radiusM": 150 }
+  { "name": "Home", "lat": 30.2672, "lon": -97.7431, "radiusM": 130, "address": "123 Main St" },
+  { "name": "Work", "lat": 30.30,   "lon": -97.70,   "radiusM": 150 }
 ]
 ```
 

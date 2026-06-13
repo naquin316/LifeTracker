@@ -10,19 +10,26 @@ import {
 import type { CurrentLocation, Geofence, MemberInfo } from "@/lib/types";
 import { memberColor } from "@/lib/colors";
 import { clockTime, coords, relativeTime } from "@/lib/format";
-import { BROWSER_KEY, DEFAULT_CENTER, MAP_ID } from "./maps";
+import { DEFAULT_CENTER } from "./maps";
 import { Battery, ConfidenceBadge } from "./ui";
 import Sidebar from "./Sidebar";
 
-const POLL_MS = 60_000;
+const POLL_MS = 20_000;
 
-export default function LiveMap() {
+export default function LiveMap({
+  browserKey,
+  mapId,
+}: {
+  browserKey: string;
+  mapId: string;
+}) {
   const [locations, setLocations] = useState<CurrentLocation[]>([]);
   const [members, setMembers] = useState<MemberInfo[]>([]);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now() / 1000);
   const [error, setError] = useState<string | null>(null);
+  const [live, setLive] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -30,6 +37,11 @@ export default function LiveMap() {
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [placing, setPlacing] = useState(false);
   const [draft, setDraft] = useState<{ lat: number; lon: number } | null>(null);
+  const [editing, setEditing] = useState<
+    (Geofence & { index: number }) | null
+  >(null);
+  // Set only when a place is selected (not on drag) so we zoom once, not per-drag.
+  const [focusTarget, setFocusTarget] = useState<Geofence | null>(null);
 
   const loadGeofences = useCallback(async () => {
     try {
@@ -53,6 +65,30 @@ export default function LiveMap() {
 
   const deleteGeofence = async (index: number) => {
     await fetch(`/api/geofences?index=${index}`, { method: "DELETE" });
+    setEditing(null);
+    await Promise.all([loadGeofences(), load()]);
+  };
+
+  const selectPlace = (index: number) => {
+    const g = geofences[index];
+    if (!g) return;
+    setSelected(null);
+    setDraft(null);
+    setPlacing(false);
+    setEditing({ ...g, index });
+    setFocusTarget({ ...g }); // fresh object → re-zooms even if re-selected
+    setSidebarOpen(false);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const { index, name, lat, lon, radiusM, address } = editing;
+    await fetch(`/api/geofences?index=${index}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), lat, lon, radiusM, address }),
+    });
+    setEditing(null);
     await Promise.all([loadGeofences(), load()]);
   };
 
@@ -63,6 +99,7 @@ export default function LiveMap() {
       if (data.error) throw new Error(data.error);
       setLocations(data.locations);
       setNow(data.now);
+      setLive(!!data.live);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -110,6 +147,7 @@ export default function LiveMap() {
           selected={selected}
           now={now}
           error={error}
+          live={live}
           geofences={geofences}
           placing={placing}
           onToggle={toggle}
@@ -119,9 +157,12 @@ export default function LiveMap() {
           }}
           onAddPlace={() => {
             setPlacing(true);
+            setEditing(null);
             setSidebarOpen(false);
           }}
           onDeletePlace={deleteGeofence}
+          onSelectPlace={selectPlace}
+          editingIndex={editing?.index ?? null}
         />
       </div>
 
@@ -157,9 +198,9 @@ export default function LiveMap() {
           </div>
         )}
 
-        <APIProvider apiKey={BROWSER_KEY}>
+        <APIProvider apiKey={browserKey}>
           <Map
-            mapId={MAP_ID}
+            mapId={mapId}
             defaultCenter={{ lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lon }}
             defaultZoom={9}
             gestureHandling="greedy"
@@ -184,9 +225,13 @@ export default function LiveMap() {
               />
             ))}
 
-            <GeofenceCircles geofences={geofences} draft={draft} />
+            <GeofenceCircles
+              geofences={geofences}
+              draft={draft}
+              editing={editing}
+            />
 
-            {selectedLoc && !draft && (
+            {selectedLoc && !draft && !editing && (
               <MemberPopup
                 loc={selectedLoc}
                 now={now}
@@ -202,9 +247,90 @@ export default function LiveMap() {
               />
             )}
 
+            {/* Draggable center handle while editing a place */}
+            {editing && (
+              <AdvancedMarker
+                position={{ lat: editing.lat, lng: editing.lon }}
+                draggable
+                zIndex={3000}
+                onDrag={(e) => {
+                  const ll = e.latLng;
+                  if (ll)
+                    setEditing((prev) =>
+                      prev ? { ...prev, lat: ll.lat(), lon: ll.lng() } : prev,
+                    );
+                }}
+              >
+                <span
+                  className="block h-5 w-5 cursor-move rounded-full border-2 border-white bg-guessed shadow-lg"
+                  title="Drag to move"
+                />
+              </AdvancedMarker>
+            )}
+
             <FitBounds locations={visible} focus={selectedLoc} />
+            <FocusCircle target={focusTarget} />
           </Map>
         </APIProvider>
+
+        {/* Edit panel while editing a place */}
+        {editing && (
+          <div className="absolute right-3 top-3 z-20 w-64 rounded-xl border border-border bg-panel/95 p-3 text-foreground shadow-2xl backdrop-blur">
+            <div className="mb-2 text-sm font-semibold">Edit place</div>
+            <input
+              value={editing.name}
+              onChange={(e) =>
+                setEditing((p) => (p ? { ...p, name: e.target.value } : p))
+              }
+              placeholder="Name"
+              className="mb-2.5 w-full rounded-md border border-border bg-panel-2 px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+            />
+            <label className="mb-1 flex items-center justify-between text-[12px] text-muted">
+              Radius
+              <span className="tabular-nums text-foreground">
+                {editing.radiusM} m
+              </span>
+            </label>
+            <input
+              type="range"
+              min={50}
+              max={400}
+              step={10}
+              value={editing.radiusM}
+              aria-label="Geofence radius in meters"
+              onChange={(e) =>
+                setEditing((p) =>
+                  p ? { ...p, radiusM: Number(e.target.value) } : p,
+                )
+              }
+              className="mb-2 w-full accent-[var(--accent)]"
+            />
+            <p className="mb-3 text-[11px] text-muted">
+              Drag the amber marker on the map to move it.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={saveEdit}
+                disabled={!editing.name.trim()}
+                className="flex-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-black disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => deleteGeofence(editing.index)}
+                className="rounded-md border border-border px-2.5 py-1.5 text-sm text-red-300 hover:bg-red-500/10"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Banner while choosing a spot for a new place */}
         {placing && (
@@ -414,37 +540,49 @@ function FitBounds({
   return null;
 }
 
-/** Draws translucent circles for saved geofences (blue) and the draft (amber). */
+/** Draws translucent circles for saved geofences (blue); the one being added
+ *  or edited is drawn in amber and tracks its live center/radius. */
 function GeofenceCircles({
   geofences,
   draft,
+  editing,
 }: {
   geofences: Geofence[];
   draft: { lat: number; lon: number } | null;
+  editing: (Geofence & { index: number }) | null;
 }) {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
-    const circles = geofences.map(
-      (g) =>
-        new google.maps.Circle({
-          map,
-          center: { lat: g.lat, lng: g.lon },
-          radius: g.radiusM,
-          strokeColor: "#5b9dff",
-          strokeOpacity: 0.7,
-          strokeWeight: 1.5,
-          fillColor: "#5b9dff",
-          fillOpacity: 0.12,
-          clickable: false,
-        }),
-    );
-    if (draft) {
+    const circles = geofences
+      .map((g, i) =>
+        editing?.index === i
+          ? null // drawn as the amber editing circle below
+          : new google.maps.Circle({
+              map,
+              center: { lat: g.lat, lng: g.lon },
+              radius: g.radiusM,
+              strokeColor: "#5b9dff",
+              strokeOpacity: 0.7,
+              strokeWeight: 1.5,
+              fillColor: "#5b9dff",
+              fillOpacity: 0.12,
+              clickable: false,
+            }),
+      )
+      .filter((c): c is google.maps.Circle => c !== null);
+
+    const amber = draft
+      ? { lat: draft.lat, lon: draft.lon, radiusM: 130 }
+      : editing
+        ? { lat: editing.lat, lon: editing.lon, radiusM: editing.radiusM }
+        : null;
+    if (amber) {
       circles.push(
         new google.maps.Circle({
           map,
-          center: { lat: draft.lat, lng: draft.lon },
-          radius: 130,
+          center: { lat: amber.lat, lng: amber.lon },
+          radius: amber.radiusM,
           strokeColor: "#fbbf24",
           strokeOpacity: 0.9,
           strokeWeight: 2,
@@ -455,7 +593,21 @@ function GeofenceCircles({
       );
     }
     return () => circles.forEach((c) => c.setMap(null));
-  }, [map, geofences, draft]);
+  }, [map, geofences, draft, editing]);
+  return null;
+}
+
+/** Zooms the map to fill the screen with a geofence when one is selected. */
+function FocusCircle({ target }: { target: Geofence | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !target) return;
+    const bounds = new google.maps.Circle({
+      center: { lat: target.lat, lng: target.lon },
+      radius: target.radiusM,
+    }).getBounds();
+    if (bounds) map.fitBounds(bounds, 40);
+  }, [map, target]);
   return null;
 }
 

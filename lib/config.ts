@@ -15,3 +15,8 @@ export const GOOD_ACCURACY_M = 50;
 
 /** Server-side Google key (geocoding/places/roads/directions). */
 export const GOOGLE_SERVER_KEY = process.env.GOOGLE_MAPS_SERVER_KEY ?? "";
+
+/** Home Assistant access for live positions (dev / non-add-on host).
+ *  On a HAOS add-on, SUPERVISOR_TOKEN is used instead (see lib/halive.ts). */
+export const HA_BASE_URL = process.env.HA_BASE_URL ?? "";
+export const HA_TOKEN = process.env.HA_TOKEN ?? "";
