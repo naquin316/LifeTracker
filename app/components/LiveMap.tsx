@@ -36,7 +36,11 @@ export default function LiveMap({
   // Geofences (named places)
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [placing, setPlacing] = useState(false);
-  const [draft, setDraft] = useState<{ lat: number; lon: number } | null>(null);
+  const [draft, setDraft] = useState<{
+    lat: number;
+    lon: number;
+    radiusM: number;
+  } | null>(null);
   const [editing, setEditing] = useState<
     (Geofence & { index: number }) | null
   >(null);
@@ -209,7 +213,11 @@ export default function LiveMap({
             className="h-full w-full"
             onClick={(e) => {
               if (placing && e.detail.latLng) {
-                setDraft({ lat: e.detail.latLng.lat, lon: e.detail.latLng.lng });
+                setDraft({
+                  lat: e.detail.latLng.lat,
+                  lon: e.detail.latLng.lng,
+                  radiusM: 130,
+                });
                 setPlacing(false);
               } else {
                 setSelected(null);
@@ -242,6 +250,9 @@ export default function LiveMap({
             {draft && (
               <GeofenceForm
                 draft={draft}
+                onRadiusChange={(radiusM) =>
+                  setDraft((p) => (p ? { ...p, radiusM } : p))
+                }
                 onSave={saveGeofence}
                 onCancel={() => setDraft(null)}
               />
@@ -523,6 +534,9 @@ function FitBounds({
 }) {
   const map = useMap();
   const fitted = useRef(false);
+  // Track the last member we zoomed to so polling updates pan-follow without
+  // snapping the zoom back each refresh.
+  const lastFocused = useRef<string | null>(null);
 
   useEffect(() => {
     if (!map || locations.length === 0 || fitted.current) return;
@@ -533,8 +547,17 @@ function FitBounds({
   }, [map, locations]);
 
   useEffect(() => {
-    if (!map || !focus) return;
+    if (!map) return;
+    if (!focus) {
+      lastFocused.current = null;
+      return;
+    }
     map.panTo({ lat: focus.lat, lng: focus.lon });
+    // Only zoom in when a new person is selected, not on every poll refresh.
+    if (lastFocused.current !== focus.member) {
+      map.setZoom(17);
+      lastFocused.current = focus.member;
+    }
   }, [map, focus]);
 
   return null;
@@ -548,7 +571,7 @@ function GeofenceCircles({
   editing,
 }: {
   geofences: Geofence[];
-  draft: { lat: number; lon: number } | null;
+  draft: { lat: number; lon: number; radiusM: number } | null;
   editing: (Geofence & { index: number }) | null;
 }) {
   const map = useMap();
@@ -573,7 +596,7 @@ function GeofenceCircles({
       .filter((c): c is google.maps.Circle => c !== null);
 
     const amber = draft
-      ? { lat: draft.lat, lon: draft.lon, radiusM: 130 }
+      ? { lat: draft.lat, lon: draft.lon, radiusM: draft.radiusM }
       : editing
         ? { lat: editing.lat, lon: editing.lon, radiusM: editing.radiusM }
         : null;
@@ -614,15 +637,17 @@ function FocusCircle({ target }: { target: Geofence | null }) {
 /** Popup form for naming a new geofence at the clicked spot. */
 function GeofenceForm({
   draft,
+  onRadiusChange,
   onSave,
   onCancel,
 }: {
-  draft: { lat: number; lon: number };
+  draft: { lat: number; lon: number; radiusM: number };
+  onRadiusChange: (radiusM: number) => void;
   onSave: (g: Geofence) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState("");
-  const [radius, setRadius] = useState(130);
+  const radius = draft.radiusM;
   const submit = () => {
     if (name.trim())
       onSave({ name: name.trim(), lat: draft.lat, lon: draft.lon, radiusM: radius });
@@ -632,7 +657,15 @@ function GeofenceForm({
       position={{ lat: draft.lat, lng: draft.lon }}
       zIndex={3000}
     >
-      <div className="pointer-events-auto" style={{ paddingBottom: 30 }}>
+      {/* Keep map gestures from firing when interacting with the form
+          (e.g. dragging the radius slider must not pan the map). */}
+      <div
+        className="pointer-events-auto"
+        style={{ paddingBottom: 30 }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <div className="w-64 rounded-xl border border-border bg-panel p-3 text-foreground shadow-2xl">
           <div className="mb-2 text-sm font-semibold">New place</div>
           <input
@@ -654,7 +687,7 @@ function GeofenceForm({
             step={10}
             value={radius}
             aria-label="Geofence radius in meters"
-            onChange={(e) => setRadius(Number(e.target.value))}
+            onChange={(e) => onRadiusChange(Number(e.target.value))}
             className="mb-3 w-full accent-[var(--accent)]"
           />
           <div className="flex gap-2">

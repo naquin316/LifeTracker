@@ -1,6 +1,6 @@
 name: LifeTracker
 slug: lifetracker
-version: "1.0.0"
+version: "1.0.1"
 description: Family location map with place-guessing and trip replay over the HA Life360 data
 url: https://github.com/naquin316/LifeTracker
 arch:

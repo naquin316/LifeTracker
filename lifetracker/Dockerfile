@@ -12,11 +12,15 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# The app source lives at the repo root; this thin add-on builds it. Pin the ref
-# to rebuild on demand by bumping config.yaml version.
+# The app source lives at the repo root; this thin add-on builds it.
 ARG APP_REPO=https://github.com/naquin316/LifeTracker
 ARG APP_REF=main
-RUN git clone --depth 1 --branch "${APP_REF}" "${APP_REPO}" . \
+# HA passes BUILD_VERSION from config.yaml's `version`. Referencing it here busts
+# Docker's layer cache on every version bump, so a Rebuild always re-clones the
+# latest `main` instead of reusing a stale cached clone.
+ARG BUILD_VERSION=dev
+RUN echo "LifeTracker build ${BUILD_VERSION}" \
+  && git clone --depth 1 --branch "${APP_REF}" "${APP_REPO}" . \
   && npm ci \
   && npm run build \
   && npm prune --omit=dev \

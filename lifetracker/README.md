@@ -20,4 +20,19 @@ from HA's live `device_tracker.life360_*` entities via the Supervisor API.
 
 - Geofences and the Google response cache persist in the add-on's `/data`.
 - Live positions need no token here — the add-on uses the Supervisor API.
-- To update the app: bump `version` in `config.yaml` upstream and **Rebuild**.
+## Publishing changes (release workflow)
+
+The add-on builds the app from GitHub `main`. To push a change live to
+`lifetracker.handlane.dev`:
+
+1. Edit + test locally (`npm run dev`, or `npm run build && npm test`).
+2. **Bump `version`** in `lifetracker/config.yaml` (e.g. `1.0.1` → `1.0.2`).
+   This is required — it busts the Docker build cache so the rebuild fetches the
+   latest code (the Dockerfile references `BUILD_VERSION`).
+3. `git commit` + `git push` (to `main`).
+4. HA → Settings → Add-ons → Store → ⋮ → **Check for updates** → the LifeTracker
+   add-on shows **Update** → click it (rebuilds + restarts, ~2–4 min).
+5. Hard-refresh the browser (Cmd-Shift-R).
+
+No rebuild needed for: **geofences** (in-app, stored in `/data`), **Google keys**
+(add-on Options → Restart), or **live positions** (automatic).
