@@ -34,6 +34,16 @@ NEW="$MAJ.$MIN.$PAT"
 sed -i '' -E "s/^version:.*/version: \"$NEW\"/" "$CFG"
 echo "    $CUR -> $NEW"
 
+echo "==> Updating changelog…"
+CL="lifetracker/CHANGELOG.md"
+[ -f "$CL" ] || printf '# Changelog\n' > "$CL"
+TMP="$(mktemp)"
+awk -v v="$NEW" -v m="$MSG" '
+  NR==1 { print; print ""; print "## " v; print "- " m; next }
+  { print }
+' "$CL" > "$TMP" && mv "$TMP" "$CL"
+echo "    added ## $NEW section"
+
 echo "==> Commit + push…"
 git add -A
 git commit -m "$MSG (v$NEW)"
