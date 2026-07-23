@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "OP_SERVICE_ACCOUNT_TOKEN=$(cat $HOME/.config/op/dev-workstation.token) op run --env-file=.env.local -- next dev -p 3939",
+    "dev": "$HOME/Code/.codehq/1password/oprun --env-file=.env.local -- next dev -p 3939",
     "build": "next build",
     "start": "next start -p 3939",
-    "build:op": "OP_SERVICE_ACCOUNT_TOKEN=$(cat $HOME/.config/op/dev-workstation.token) op run --env-file=.env.local -- next build",
-    "start:op": "OP_SERVICE_ACCOUNT_TOKEN=$(cat $HOME/.config/op/dev-workstation.token) op run --env-file=.env.local -- next start -p 3939",
+    "build:op": "$HOME/Code/.codehq/1password/oprun --env-file=.env.local -- next build",
+    "start:op": "$HOME/Code/.codehq/1password/oprun --env-file=.env.local -- next start -p 3939",
     "lint": "eslint",
     "test": "vitest run",
     "sync": "bash scripts/sync.sh"
