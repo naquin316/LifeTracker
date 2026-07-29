@@ -2,7 +2,7 @@
 name: LifeTracker
 status: active
 phase: building
-last_review: 2026-07-24
+last_review: 2026-07-29
 ---
 
 # LifeTracker
