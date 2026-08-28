@@ -1,6 +1,6 @@
 ---
 name: LifeTracker
-status: active
+status: paused
 phase: building
 last_review: 2026-07-29
 ---
