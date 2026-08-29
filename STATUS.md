@@ -2,7 +2,7 @@
 name: LifeTracker
 status: paused
 phase: building
-last_review: 2026-07-29
+last_review: 2026-08-29
 ---
 
 # LifeTracker
