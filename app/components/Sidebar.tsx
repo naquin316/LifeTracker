@@ -150,14 +150,34 @@ export default function Sidebar({
       </ul>
       </div>
 
-      {/* Named places (geofences) — pinned footer so "+ Add" is always visible */}
-      <div className="shrink-0 border-t border-border px-4 py-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+      {/* Named places (geofences) — pinned footer so "+ Add" is always visible.
+          Collapsible via native <details>: no state, and the browser remembers
+          nothing, which is fine — it re-opens on load. */}
+      <details open className="group/places shrink-0 border-t border-border px-4 py-3">
+        <summary className="mb-2 flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+            <svg
+              viewBox="0 0 24 24"
+              width="11"
+              height="11"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="transition-transform group-open/places:rotate-90"
+            >
+              <path d="M9 6l6 6-6 6" />
+            </svg>
             Places · {geofences.length}
           </span>
           <button
-            onClick={onAddPlace}
+            onClick={(e) => {
+              // Inside <summary>, a click would otherwise toggle the section.
+              e.preventDefault();
+              e.stopPropagation();
+              onAddPlace();
+            }}
             className={`rounded-md border px-2 py-1 text-[12px] ${
               placing
                 ? "border-accent text-accent"
@@ -166,8 +186,8 @@ export default function Sidebar({
           >
             {placing ? "Tap map…" : "+ Add"}
           </button>
-        </div>
-        <ul className="flex flex-col gap-1">
+        </summary>
+        <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
           {geofences.map((g, i) => (
             <li
               key={`${g.name}-${i}`}
@@ -217,7 +237,7 @@ export default function Sidebar({
             </li>
           )}
         </ul>
-      </div>
+      </details>
     </aside>
   );
 }

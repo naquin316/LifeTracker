@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.2
+- Places panel is collapsible (native <details>) with a scroll cap, so a long list no longer pushes People off screen.
+
 ## 1.0.1
 - Reliable rebuilds: the add-on Dockerfile now busts Docker's build cache on
   each version bump, so updates always fetch the latest code from `main`.
