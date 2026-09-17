@@ -15,7 +15,7 @@
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.8.3",
     "better-sqlite3": "^12.10.0",
-    "next": "16.2.9",
+    "next": "16.3.5",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -26,9 +26,16 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.12",
+    "browserslist": "^4.29.0",
+    "js-yaml": "^5.4.2",
+    "postcss": "^8.5.28",
+    "baseline-browser-mapping": "^2.11.24"
   }
 }
