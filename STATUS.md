@@ -2,7 +2,7 @@
 name: LifeTracker
 status: active
 phase: building
-last_review: 2026-09-04
+last_review: 2026-09-20
 ---
 
 # LifeTracker
@@ -14,8 +14,11 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Geofences live in the add-on's `/data` on the HA box — the Mac's `data/places.json` is a
   separate copy that drifts. Pull it from `http://192.168.86.42:3939/api/geofences` before
   trusting or editing it locally.
+- On branch `tb/cve-upgrades`, not yet merged to main — a `next`/`vitest` CVE remediation
+  pass, working tree clean (inferred)
 
 ## Next
+- Merge `tb/cve-upgrades` to main and cut a release once satisfied (inferred)
 - Turn on the add-on's **Auto update** — a release currently needs a manual HA Rebuild
 - Restrict the Google Maps API keys (still the unrestricted quick-start pair)
 - Verify `npm run dev` boots end-to-end under the `oprun` SDK wrapper (needs
@@ -29,6 +32,10 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Iterate on prediction/replay
 
 ## Done
+- Bumped `next` 16.2.9→16.3.5 and pinned transitive CVE fixes via `package.json` overrides
+  (brace-expansion, browserslist, js-yaml, postcss, baseline-browser-mapping) plus a
+  `vitest` patch bump — npm audit clean (0/0/0/0), 11/11 tests pass, build succeeds
+  (2026-09-17)
 - Collapsible Places panel shipped as add-on v1.0.2 — native `<details>` + scroll-capped
   list, so a 20-item list no longer pushes People off screen (2026-09-04)
 - **Deploy gotcha:** HA "Check for updates"/"Update" did NOT pick up v1.0.2; add-on →
