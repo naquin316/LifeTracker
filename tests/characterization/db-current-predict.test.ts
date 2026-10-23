@@ -122,17 +122,16 @@ describe("predictIfStale", () => {
     expect(p.lon).toBeCloseTo(A.lon, 6);
   });
 
-  it("pins current behaviour: the hour-of-day fallback does not wrap midnight", async () => {
+  it("the hour-of-day fallback wraps midnight", async () => {
     // Ten Wednesdays at 23:30 at A, one Thursday 00:15 at B. Asked about a
     // Monday 00:30, the weekly slice is empty, and the fallback keeps only
-    // hours 0–1, so 23:30 (one hour away on the clock) is ignored and the
-    // single B fix wins.
+    // hours 23–1 (circular), so the ten 23:30 fixes at A outvote the one B fix.
     const hist: FixtureRow[] = [];
     for (let k = 0; k < 10; k++) hist.push({ ts: localTs(2025, 12, 31 - 7 * k, 23, 30), member: "M", ...A });
     hist.push({ ts: localTs(2026, 1, 8, 0, 15), member: "M", ...B });
     const { predict } = await withDb(hist);
     const p = predict.predictIfStale("M", localTs(2026, 1, 12, 0, 30))!;
-    expect(p.lat).toBeCloseTo(B.lat, 6);
-    expect(p.lon).toBeCloseTo(B.lon, 6);
+    expect(p.lat).toBeCloseTo(A.lat, 6);
+    expect(p.lon).toBeCloseTo(A.lon, 6);
   });
 });

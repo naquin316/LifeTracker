@@ -8,10 +8,10 @@ function hourOfWeek(ts: number): number {
   return d.getDay() * 24 + d.getHours();
 }
 
-/** Circular distance between two hour-of-week values (wraps Sun↔Sat). */
-function howDistance(a: number, b: number): number {
+/** Circular distance on a cycle of `period` (168 = week, wraps Sun↔Sat; 24 = day, wraps midnight). */
+function circularDistance(a: number, b: number, period: number): number {
   const diff = Math.abs(a - b);
-  return Math.min(diff, 168 - diff);
+  return Math.min(diff, period - diff);
 }
 
 /**
@@ -29,12 +29,12 @@ export function predictIfStale(
   if (points.length < 10) return null;
 
   const targetHow = hourOfWeek(nowTs);
-  let candidates = points.filter((p) => howDistance(hourOfWeek(p.ts), targetHow) <= 1);
+  let candidates = points.filter((p) => circularDistance(hourOfWeek(p.ts), targetHow, 168) <= 1);
   // Fall back to same hour-of-day across all days if the weekly slice is thin.
   if (candidates.length < 5) {
     const targetHour = new Date(nowTs * 1000).getHours();
     candidates = points.filter(
-      (p) => Math.abs(new Date(p.ts * 1000).getHours() - targetHour) <= 1,
+      (p) => circularDistance(new Date(p.ts * 1000).getHours(), targetHour, 24) <= 1,
     );
   }
   if (candidates.length === 0) return null;
