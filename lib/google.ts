@@ -119,21 +119,33 @@ export async function snapToRoads(
   points: { lat: number; lon: number }[],
 ): Promise<{ lat: number; lon: number }[] | null> {
   if (!hasGoogleKey() || points.length === 0) return null;
-  // Roads API caps at 100 points per request.
-  const slice = points.slice(0, 100);
-  const pathParam = slice.map((p) => `${p.lat},${p.lon}`).join("|");
-  const url =
-    `https://roads.googleapis.com/v1/snapToRoads` +
-    `?interpolate=true&path=${encodeURIComponent(pathParam)}&key=${GOOGLE_SERVER_KEY}`;
-  const data = await getJson(url);
-  const snapped = data?.snappedPoints as
-    | { location: { latitude: number; longitude: number } }[]
-    | undefined;
-  if (!snapped || snapped.length === 0) return null;
-  return snapped.map((s) => ({
-    lat: s.location.latitude,
-    lon: s.location.longitude,
-  }));
+  // Roads API caps at 100 points per request: send overlapping chunks (each
+  // later chunk repeats the previous last point) and drop that repeat on join.
+  const chunks: { lat: number; lon: number }[][] = [];
+  for (let i = 0; i === 0 || i < points.length - 1; i += 99) {
+    chunks.push(points.slice(i, i + 100));
+  }
+  const parts = await Promise.all(
+    chunks.map(async (chunk) => {
+      const pathParam = chunk.map((p) => `${p.lat},${p.lon}`).join("|");
+      const url =
+        `https://roads.googleapis.com/v1/snapToRoads` +
+        `?interpolate=true&path=${encodeURIComponent(pathParam)}&key=${GOOGLE_SERVER_KEY}`;
+      const data = await getJson(url);
+      const snapped = data?.snappedPoints as
+        | { location: { latitude: number; longitude: number } }[]
+        | undefined;
+      if (!snapped || snapped.length === 0) return null;
+      return snapped.map((s) => ({
+        lat: s.location.latitude,
+        lon: s.location.longitude,
+      }));
+    }),
+  );
+  if (parts.some((p) => !p)) return null;
+  return (parts as { lat: number; lon: number }[][]).flatMap((p, k) =>
+    k ? p.slice(1) : p,
+  );
 }
 
 /**

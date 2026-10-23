@@ -174,13 +174,14 @@ describe("reconstructRoute", () => {
     expect(r.distanceMeters).toBeCloseTo(4 * 111.2, -1);
   });
 
-  it("pins current behaviour: only the first 100 fixes are snapped, the rest of the trip is dropped", async () => {
+  it("snaps a long drive in 100-point chunks and stitches the whole path", async () => {
     const { routes } = await load("k");
     const r = await routes.reconstructRoute(move(150));
-    expect(r.path).toHaveLength(100);
+    expect(r.path).toHaveLength(150);
     const last = r.path[r.path.length - 1];
-    expect(last.lat).toBeCloseTo(HERE.lat + 99 * 0.001, 9); // fix #100, not the real end
-    expect(last.ts).toBe(149 * MIN); // ...reached at the move's end time
+    expect(last.lat).toBeCloseTo(HERE.lat + 149 * 0.001, 9); // the real final fix
+    expect(last.ts).toBe(149 * MIN);
+    expect(calls.filter((c) => String(c).includes("snapToRoads"))).toHaveLength(2);
   });
 
   it("pins current behaviour: two different routes with the same endpoints and fix count share one cached path", async () => {
