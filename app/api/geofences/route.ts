@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadGeofences, saveGeofences } from "@/lib/geofences";
+import { loadGeofences, parseFenceIndex, saveGeofences } from "@/lib/geofences";
 import type { Geofence } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const index = req.nextUrl.searchParams.get("index");
-    if (index == null || Number.isNaN(Number(index))) {
+    if (index == null || !/^\d+$/.test(index)) {
       return NextResponse.json({ error: "index is required" }, { status: 400 });
     }
     const body = (await req.json()) as Partial<Geofence>;
@@ -45,8 +45,8 @@ export async function PUT(req: NextRequest) {
       );
     }
     const fences = loadGeofences();
-    const i = Number(index);
-    if (i < 0 || i >= fences.length) {
+    const i = parseFenceIndex(index, fences.length);
+    if (i == null) {
       return NextResponse.json({ error: "index out of range" }, { status: 404 });
     }
     const radiusM = Number.isFinite(body.radiusM) ? Number(body.radiusM) : fences[i].radiusM;
@@ -60,10 +60,14 @@ export async function PUT(req: NextRequest) {
 
 export function DELETE(req: NextRequest) {
   const index = req.nextUrl.searchParams.get("index");
-  if (index == null || Number.isNaN(Number(index))) {
+  if (index == null || !/^\d+$/.test(index)) {
     return NextResponse.json({ error: "index is required" }, { status: 400 });
   }
-  const fences = loadGeofences().filter((_, i) => i !== Number(index));
+  const i = parseFenceIndex(index, loadGeofences().length);
+  if (i == null) {
+    return NextResponse.json({ error: "index out of range" }, { status: 404 });
+  }
+  const fences = loadGeofences().filter((_, n) => n !== i);
   saveGeofences(fences);
   return NextResponse.json({ ok: true, geofences: fences });
 }

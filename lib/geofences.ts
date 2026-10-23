@@ -60,3 +60,10 @@ export function saveGeofences(fences: Geofence[]): void {
   fs.writeFileSync(FILE, JSON.stringify(fences, null, 2) + "\n", "utf8");
   cache = null; // invalidate so the next read reflects the write immediately
 }
+
+/** A whole-number `?index=` that points at a real fence, else null. */
+export function parseFenceIndex(raw: string | null, length: number): number | null {
+  if (raw == null || !/^\d+$/.test(raw)) return null;
+  const i = Number(raw);
+  return i < length ? i : null;
+}

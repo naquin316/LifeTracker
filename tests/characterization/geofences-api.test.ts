@@ -94,18 +94,29 @@ describe("/api/geofences", () => {
     expect(readPlaces()).toEqual([WORK]);
   });
 
-  it("pins current behaviour: DELETE with an empty index deletes the first fence", async () => {
+  it("DELETE with an empty or non-integer index is a 400 and touches nothing", async () => {
     writePlaces([HOME, WORK]);
-    const res = DELETE(req("/api/geofences?index=", { method: "DELETE" }));
-    expect(res.status).toBe(200);
-    expect(readPlaces()).toEqual([WORK]); // Number("") === 0
+    for (const q of ["", "%20", "-0", "-1", "1.5", "abc"]) {
+      const res = DELETE(req(`/api/geofences?index=${q}`, { method: "DELETE" }));
+      expect(res.status, q).toBe(400);
+    }
+    expect(readPlaces()).toEqual([HOME, WORK]);
   });
 
-  it("pins current behaviour: DELETE out of range reports ok (PUT would 404)", async () => {
+  it("PUT with an empty or non-integer index is a 400 and touches nothing", async () => {
+    writePlaces([HOME, WORK]);
+    for (const q of ["", "%20", "-0", "1.5", "abc"]) {
+      const res = await PUT(req(`/api/geofences?index=${q}`, { method: "PUT", body: { name: "X", lat: 1, lon: 1 } }));
+      expect(res.status, q).toBe(400);
+    }
+    expect(readPlaces()).toEqual([HOME, WORK]);
+  });
+
+  it("DELETE out of range is a 404 (same as PUT) and leaves the file alone", async () => {
     writePlaces([HOME]);
     const res = DELETE(req("/api/geofences?index=7", { method: "DELETE" }));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, geofences: [HOME] });
+    expect(res.status).toBe(404);
+    expect(readPlaces()).toEqual([HOME]);
   });
 
   it("DELETE without an index is a 400", async () => {
