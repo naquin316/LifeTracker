@@ -75,6 +75,9 @@ describe("detectStaysAndMoves", () => {
     const { stays, moves } = detectStaysAndMoves(pts);
     expect(stays).toHaveLength(1);
     expect(stays[0].durationSeconds).toBeGreaterThan(90 * MIN);
+    expect(stays[0].pointCount).toBe(12); // the blip fix is not a clustered fix
+    expect(stays[0].lat).toBe(30.0);
+    expect(stays[0].lon).toBe(-90.0);
     expect(moves).toHaveLength(0);
   });
 });

@@ -1,10 +1,12 @@
-import { STAY_MIN_SECONDS, STAY_RADIUS_M } from "./config";
+import { STAY_JITTER_M, STAY_MIN_SECONDS, STAY_RADIUS_M } from "./config";
 import { centroid, haversineMeters } from "./geo";
 import type { LocationPoint, Move, Stay } from "./types";
 
 interface Cluster {
   startIdx: number;
   endIdx: number; // inclusive
+  /** Original clusters folded into this one; only their fixes set the centre. */
+  parts?: Cluster[];
 }
 
 /**
@@ -47,18 +49,25 @@ export function detectStayClusters(
   return clusters;
 }
 
+function partsOf(c: Cluster): Cluster[] {
+  return c.parts ?? [c];
+}
+
+function clusterFixes(points: LocationPoint[], c: Cluster): LocationPoint[] {
+  return partsOf(c).flatMap((p) => points.slice(p.startIdx, p.endIdx + 1));
+}
+
 function spanCentroid(points: LocationPoint[], c: Cluster) {
-  return centroid(
-    points.slice(c.startIdx, c.endIdx + 1).map((p) => ({ lat: p.lat, lon: p.lon })),
-  );
+  return centroid(clusterFixes(points, c).map((p) => ({ lat: p.lat, lon: p.lon })));
 }
 
 /**
  * Merge consecutive clusters whose centroids are within `radiusM` of each
- * other. GPS jitter often splits one long dwell into several clusters with
- * tiny excursions between them; this folds them back into a single stay (and
- * absorbs the jitter "moves"). A genuine errand farther than the radius is
- * left as separate stays.
+ * other AND whose in-between fixes all stay within `STAY_JITTER_M` of the
+ * earlier stay. GPS jitter often splits one long dwell into several clusters
+ * with tiny excursions between them; this folds them back into a single stay
+ * (and absorbs the jitter "moves"). A genuine errand in between is left as
+ * separate stays. A merged stay's centre uses only the clustered fixes.
  */
 export function mergeClusters(
   points: LocationPoint[],
@@ -71,26 +80,31 @@ export function mergeClusters(
     if (prev) {
       const a = spanCentroid(points, prev);
       const b = spanCentroid(points, c);
-      if (haversineMeters(a.lat, a.lon, b.lat, b.lon) <= radiusM) {
+      const gapNear = points
+        .slice(prev.endIdx + 1, c.startIdx)
+        .every((p) => haversineMeters(a.lat, a.lon, p.lat, p.lon) <= STAY_JITTER_M);
+      if (gapNear && haversineMeters(a.lat, a.lon, b.lat, b.lon) <= radiusM) {
         prev.endIdx = c.endIdx; // extend to absorb this cluster + the gap
+        prev.parts = [...partsOf(prev), ...partsOf(c)];
         continue;
       }
     }
-    merged.push({ ...c });
+    merged.push({ ...c, parts: [c] });
   }
   return merged;
 }
 
 function buildStay(points: LocationPoint[], c: Cluster): Stay {
   const slice = points.slice(c.startIdx, c.endIdx + 1);
-  const ctr = centroid(slice.map((p) => ({ lat: p.lat, lon: p.lon })));
+  const fixes = clusterFixes(points, c);
+  const ctr = centroid(fixes.map((p) => ({ lat: p.lat, lon: p.lon })));
   return {
     startTs: slice[0].ts,
     endTs: slice[slice.length - 1].ts,
     durationSeconds: slice[slice.length - 1].ts - slice[0].ts,
     lat: ctr.lat,
     lon: ctr.lon,
-    pointCount: slice.length,
+    pointCount: fixes.length,
     place: null, // filled by the caller via resolvePlace
   };
 }

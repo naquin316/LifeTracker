@@ -68,25 +68,26 @@ describe("stay detection on real-world 15-minute sampling", () => {
     expect(detectStaysAndMoves(pts)).toEqual({ stays: [], moves: [] });
   });
 
-  it("pins current behaviour: a round trip with no stay in between is erased by the merge", () => {
+  it("a round trip with an errand in between is two stays and one move, centred on home", () => {
     // Home 0–60 min, one fix 5 km away at 75 min (a short errand), home again
-    // 90–150 min. The merge only compares the two home centroids, so the errand
-    // vanishes: one stay, no moves, and the errand fix is counted inside it.
+    // 90–150 min. The errand fix is far from home, so the stays don't merge and
+    // it stays out of both stays' centres.
     const pts = [
       ...Array.from({ length: 7 }, (_, i) => pt(i * 10 * MIN, HOME.lat, HOME.lon)),
       pt(75 * MIN, HOME.lat + 0.045, HOME.lon),
       ...Array.from({ length: 7 }, (_, i) => pt((90 + i * 10) * MIN, HOME.lat, HOME.lon)),
     ];
     const { stays, moves } = detectStaysAndMoves(pts);
-    expect(moves).toHaveLength(0);
-    expect(stays).toHaveLength(1);
-    expect(stays[0].startTs).toBe(0);
-    expect(stays[0].endTs).toBe(150 * MIN);
-    expect(stays[0].pointCount).toBe(15);
-    // ...and the excursion drags the stay's centroid ~333 m off the house.
-    const off = haversineMeters(HOME.lat, HOME.lon, stays[0].lat, stays[0].lon);
-    expect(off).toBeGreaterThan(300);
-    expect(off).toBeLessThan(350);
+    expect(stays.map((s) => [s.startTs, s.endTs])).toEqual([
+      [0, 60 * MIN],
+      [90 * MIN, 150 * MIN],
+    ]);
+    for (const s of stays) {
+      expect(s.pointCount).toBe(7);
+      expect(haversineMeters(HOME.lat, HOME.lon, s.lat, s.lon)).toBeLessThan(1);
+    }
+    expect(moves).toHaveLength(1);
+    expect(moves[0].path.map((p) => p.ts)).toContain(75 * MIN);
   });
 });
 

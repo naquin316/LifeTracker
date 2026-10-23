@@ -7,6 +7,10 @@ export const STALE_SECONDS = 30 * 60;
 /** Stay-point detection: max radius (m) a cluster of points may span. */
 export const STAY_RADIUS_M = 80;
 
+/** Stay merging: furthest (m) a fix between two clusters may be from the stay
+ *  and still count as GPS jitter rather than a real errand. */
+export const STAY_JITTER_M = 250;
+
 /** Stay-point detection: minimum dwell (seconds) to count as a stay. */
 export const STAY_MIN_SECONDS = 10 * 60;
 
