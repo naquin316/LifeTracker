@@ -10,18 +10,15 @@ last_review: 2026-10-23
 Private local Next.js Google-Maps family-location app over the Home Assistant Life360 history DB — place naming, road-snapped routes, stale-fix prediction, and trip replay.
 
 ## Now
-- Live at lifetracker.handlane.dev on add-on **v1.0.2**; 20 curated geofences in place
-- Release 1 (HOME-28 to HOME-33) is on main but not released: `lifetracker/config.yaml` is
-  still 1.0.2, so the live add-on runs none of these fixes yet
+- Live at lifetracker.handlane.dev on add-on **v1.0.3** (2026-10-23), which carries Release 1 (HOME-28 to HOME-33); 20 curated geofences in place
 - Geofences live in the add-on's `/data` on the HA box — the Mac's `data/places.json` is a
   separate copy that drifts. Pull it from `http://192.168.86.42:3939/api/geofences` before
   trusting or editing it locally.
 
 ## Next
-- Ship Release 1: `scripts/release.sh "Release 1 fixes"` (bumps to 1.0.3), then add-on →
-  ⋮ → **Rebuild** in HA. The route cache key changed (HOME-32), so the first replays after
-  that re-snap each drive once on the Roads API.
-- Turn on the add-on's **Auto update** — a release currently needs a manual HA Rebuild
+- Merge `tb/cve-upgrades` (`next` 16.3.5 + CVE overrides) to main and release it as 1.0.4.
+- Releasing: bump `lifetracker/config.yaml`, push main, then HA → Settings → Apps → store ⋮ →
+  Check for updates (Auto update is on; it picks up the new version from there).
 - Restrict the Google Maps API keys (still the unrestricted quick-start pair)
 - Verify `npm run dev` boots end-to-end under the `oprun` SDK wrapper (needs
   `~/.config/op/dev-workstation.token`)
@@ -34,6 +31,7 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Iterate on prediction/replay
 
 ## Done
+- Released add-on v1.0.3 with Release 1 (HOME-28 to HOME-33), checked live: `/api/trip` refuses a reversed or over-7-day window (2026-10-23)
 - Release 1 fixes, all on main (2026-10-23):
   - HOME-28: geofence PUT/DELETE with an empty or bad index is 400, out of range is 404;
     neither touches fence #0 any more
