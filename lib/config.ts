@@ -24,3 +24,6 @@ export const GOOGLE_SERVER_KEY = process.env.GOOGLE_MAPS_SERVER_KEY ?? "";
  *  On a HAOS add-on, SUPERVISOR_TOKEN is used instead (see lib/halive.ts). */
 export const HA_BASE_URL = process.env.HA_BASE_URL ?? "";
 export const HA_TOKEN = process.env.HA_TOKEN ?? "";
+
+/** Longest window (seconds) /api/trip will reconstruct; each stay and move costs a Google call. */
+export const MAX_TRIP_SECONDS = 7 * 86400;

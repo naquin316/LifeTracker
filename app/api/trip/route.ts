@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MAX_TRIP_SECONDS } from "@/lib/config";
 import { getPointsInRange } from "@/lib/db";
 import { detectStaysAndMoves } from "@/lib/stays";
 import { resolvePlace } from "@/lib/places";
@@ -32,6 +33,13 @@ export async function GET(req: NextRequest) {
         { error: "member, from, and to are required" },
         { status: 400 },
       );
+    }
+
+    if (to <= from) {
+      return NextResponse.json({ error: "to must be after from" }, { status: 400 });
+    }
+    if (to - from > MAX_TRIP_SECONDS) {
+      return NextResponse.json({ error: "window is longer than 7 days" }, { status: 400 });
     }
 
     const points = getPointsInRange(member, from, to);

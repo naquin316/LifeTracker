@@ -10,7 +10,7 @@ import { MIN, makeLocationsDb, tempDir, type FixtureRow } from "./fixtures";
 // Route files import via the "@/..." alias, which vitest can't resolve without
 // a config change; forward each alias to the real module. vi.resetModules keeps
 // mocked modules, so the forwards are re-registered (doMock) on every fresh load.
-const ALIASED = ["db", "current", "halive", "places", "predict", "stays", "routes"] as const;
+const ALIASED = ["db", "current", "halive", "places", "predict", "stays", "routes", "config"] as const;
 function forwardAliases() {
   for (const m of ALIASED) vi.doMock(`@/lib/${m}`, () => import(`../../lib/${m}`));
 }
@@ -173,13 +173,22 @@ describe("GET /api/trip (no Google key)", () => {
     expect(body.moves[0].path).toHaveLength(3);
   });
 
-  it("accepts ISO dates; a reversed window just yields an empty trip", async () => {
+  it("accepts ISO dates", async () => {
     const { trip } = await setup(rows);
     const iso = (s: number) => new Date(s * 1000).toISOString();
     const ok = await (await get(trip, `member=Ryan&from=${iso(T)}&to=${iso(T + 3600)}`)).json();
     expect(ok.stays).toHaveLength(2);
+  });
+
+  it("400s a reversed or empty window and one longer than 7 days", async () => {
+    const { trip } = await setup(rows);
     const rev = await get(trip, `member=Ryan&from=${T + 3600}&to=${T}`);
-    expect(rev.status).toBe(200);
-    expect(await rev.json()).toMatchObject({ stays: [], moves: [] });
+    expect(rev.status).toBe(400);
+    expect((await rev.json()).error).toMatch(/to must be after from/);
+    expect((await get(trip, `member=Ryan&from=${T}&to=${T}`)).status).toBe(400);
+    const long = await get(trip, `member=Ryan&from=${T}&to=${T + 8 * 86400}`);
+    expect(long.status).toBe(400);
+    expect((await long.json()).error).toMatch(/longer than 7 days/);
+    expect((await get(trip, `member=Ryan&from=${T}&to=${T + 7 * 86400}`)).status).toBe(200);
   });
 });
