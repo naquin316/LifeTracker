@@ -2,7 +2,7 @@
 name: LifeTracker
 status: active
 phase: building
-last_review: 2026-10-23
+last_review: 2026-10-24
 ---
 
 # LifeTracker
@@ -10,7 +10,9 @@ last_review: 2026-10-23
 Private local Next.js Google-Maps family-location app over the Home Assistant Life360 history DB — place naming, road-snapped routes, stale-fix prediction, and trip replay.
 
 ## Now
-- Live at lifetracker.handlane.dev on add-on **v1.0.3** (2026-10-23), which carries Release 1 (HOME-28 to HOME-33); 20 curated geofences in place
+- Live at lifetracker.handlane.dev on add-on **v1.0.3**, which carries Release 1
+  (HOME-28 to HOME-33). Ryan's batch test passed 2026-10-24, so Release 1 is done.
+- 20 geofences on the add-on (checked 2026-10-24); none overlap.
 - Geofences live in the add-on's `/data` on the HA box — the Mac's `data/places.json` is a
   separate copy that drifts. Pull it from `http://192.168.86.42:3939/api/geofences` before
   trusting or editing it locally.
@@ -19,18 +21,26 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Merge `tb/cve-upgrades` (`next` 16.3.5 + CVE overrides) to main and release it as 1.0.4.
 - Releasing: bump `lifetracker/config.yaml`, push main, then HA → Settings → Apps → store ⋮ →
   Check for updates (Auto update is on; it picks up the new version from there).
+- Close HOME-28 to HOME-33 in Plane if any are still open (batch test passed).
 - Restrict the Google Maps API keys (still the unrestricted quick-start pair)
 - Verify `npm run dev` boots end-to-end under the `oprun` SDK wrapper (needs
   `~/.config/op/dev-workstation.token`)
 - Consider a `places` sync command (Mac ↔ add-on) instead of hand-syncing via curl
-- Two Lone Oak St geofences overlap (175m apart, r=130 and r=60) — first match wins, so the
-  second never fires. Merge or shrink one.
 
 ## Roadmap
 - Keep sync watcher (`scripts/sync.sh --watch`) running for fresh data
 - Iterate on prediction/replay
 
 ## Done
+- Release 1 batch-tested and passed by Ryan (2026-10-24), live as add-on v1.0.3:
+  - HOME-28: a geofence edit or delete with an empty, bad or out-of-range index is
+    refused and no longer changes fence #0
+  - HOME-29: a stay doesn't merge across a real errand, and its centre ignores the
+    errand's fixes
+  - HOME-30: the hour-of-day prediction treats 11 PM and midnight as neighbours
+  - HOME-31: replay of a long drive keeps everything after fix #100
+  - HOME-32: different drives between the same two places each get their own route
+  - HOME-33: `/api/trip` refuses a backwards window and anything over 7 days
 - Released add-on v1.0.3 with Release 1 (HOME-28 to HOME-33), checked live: `/api/trip` refuses a reversed or over-7-day window (2026-10-23)
 - Release 1 fixes, all on main (2026-10-23):
   - HOME-28: geofence PUT/DELETE with an empty or bad index is 400, out of range is 404;
