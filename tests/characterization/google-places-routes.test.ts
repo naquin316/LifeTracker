@@ -184,11 +184,13 @@ describe("reconstructRoute", () => {
     expect(calls.filter((c) => String(c).includes("snapToRoads"))).toHaveLength(2);
   });
 
-  it("pins current behaviour: two different routes with the same endpoints and fix count share one cached path", async () => {
+  it("two different routes with the same endpoints and fix count get their own path; the same route is cached", async () => {
     const { routes } = await load("k");
     const first = await routes.reconstructRoute(move(4));
     const detour = await routes.reconstructRoute(move(4, 0.05)); // ~5 km east mid-route
-    expect(calls).toHaveLength(1); // second never reached Google
-    expect(detour.path).toEqual(first.path);
+    expect(calls).toHaveLength(2); // the detour went to Google itself
+    expect(detour.path).not.toEqual(first.path);
+    await routes.reconstructRoute(move(4));
+    expect(calls).toHaveLength(2); // an identical drive is a cache hit
   });
 });

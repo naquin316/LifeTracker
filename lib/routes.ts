@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cached } from "./cache";
 import { gridKey, haversineMeters } from "./geo";
 import { snapToRoads } from "./google";
@@ -32,15 +33,15 @@ function assignTimestamps(
 }
 
 function cacheKey(move: Move): string {
-  const a = move.path[0];
-  const b = move.path[move.path.length - 1];
-  return `${gridKey(a.lat, a.lon)}>${gridKey(b.lat, b.lon)}@${move.path.length}`;
+  return createHash("sha1")
+    .update(move.path.map((p) => gridKey(p.lat, p.lon)).join("|"))
+    .digest("hex");
 }
 
 /**
  * Turn the sparse 15-min samples of a move into a smooth, road-snapped path
  * suitable for animation. Falls back to the raw samples if Google isn't
- * available. Cached by endpoints + sample count.
+ * available. Cached by a hash of every sample (to ~11 m).
  */
 export async function reconstructRoute(move: Move): Promise<Move> {
   const raw = move.path.map((p) => ({ lat: p.lat, lon: p.lon }));
