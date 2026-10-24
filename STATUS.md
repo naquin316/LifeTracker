@@ -2,7 +2,7 @@
 name: LifeTracker
 status: active
 phase: building
-last_review: 2026-09-04
+last_review: 2026-10-23
 ---
 
 # LifeTracker
@@ -11,11 +11,16 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 
 ## Now
 - Live at lifetracker.handlane.dev on add-on **v1.0.2**; 20 curated geofences in place
+- Release 1 (HOME-28 to HOME-33) is on main but not released: `lifetracker/config.yaml` is
+  still 1.0.2, so the live add-on runs none of these fixes yet
 - Geofences live in the add-on's `/data` on the HA box — the Mac's `data/places.json` is a
   separate copy that drifts. Pull it from `http://192.168.86.42:3939/api/geofences` before
   trusting or editing it locally.
 
 ## Next
+- Ship Release 1: `scripts/release.sh "Release 1 fixes"` (bumps to 1.0.3), then add-on →
+  ⋮ → **Rebuild** in HA. The route cache key changed (HOME-32), so the first replays after
+  that re-snap each drive once on the Roads API.
 - Turn on the add-on's **Auto update** — a release currently needs a manual HA Rebuild
 - Restrict the Google Maps API keys (still the unrestricted quick-start pair)
 - Verify `npm run dev` boots end-to-end under the `oprun` SDK wrapper (needs
@@ -29,6 +34,18 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Iterate on prediction/replay
 
 ## Done
+- Release 1 fixes, all on main (2026-10-23):
+  - HOME-28: geofence PUT/DELETE with an empty or bad index is 400, out of range is 404;
+    neither touches fence #0 any more
+  - HOME-29: stays don't merge across a real errand (a fix over 250 m away); the stay's
+    centre uses only its clustered fixes
+  - HOME-30: the hour-of-day prediction fallback wraps midnight, so 11 PM and
+    midnight count as neighbours
+  - HOME-31: replay snaps long drives in overlapping 100-point chunks and stitches them,
+    so nothing after fix #100 is lost
+  - HOME-32: the route cache keys on a hash of every sample, so different drives between
+    the same two places no longer share one path
+  - HOME-33: `/api/trip` returns 400 on a reversed window and caps the range at 7 days
 - Collapsible Places panel shipped as add-on v1.0.2 — native `<details>` + scroll-capped
   list, so a 20-item list no longer pushes People off screen (2026-09-04)
 - **Deploy gotcha:** HA "Check for updates"/"Update" did NOT pick up v1.0.2; add-on →
