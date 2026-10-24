@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+- Release 1: geofence edits, errand stays, midnight predictions, long-drive replay, route cache, trip window (HOME-28..33)
+
 ## 1.0.2
 - Places panel is collapsible (native <details>) with a scroll cap, so a long list no longer pushes People off screen.
 
