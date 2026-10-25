@@ -2,7 +2,7 @@
 name: LifeTracker
 status: active
 phase: building
-last_review: 2026-10-24
+last_review: 2026-10-25
 ---
 
 # LifeTracker
@@ -10,8 +10,8 @@ last_review: 2026-10-24
 Private local Next.js Google-Maps family-location app over the Home Assistant Life360 history DB — place naming, road-snapped routes, stale-fix prediction, and trip replay.
 
 ## Now
-- Live at lifetracker.handlane.dev on add-on **v1.0.3**, which carries Release 1
-  (HOME-28 to HOME-33). Ryan's batch test passed 2026-10-24, so Release 1 is done.
+- Live at lifetracker.handlane.dev on add-on **v1.0.4** (Release 1, HOME-28 to HOME-33,
+  batch-tested 2026-10-24, plus the `?member=` link).
 - 20 geofences on the add-on (checked 2026-10-24); none overlap.
 - Geofences live in the add-on's `/data` on the HA box — the Mac's `data/places.json` is a
   separate copy that drifts. Pull it from `http://192.168.86.42:3939/api/geofences` before
@@ -32,6 +32,7 @@ Private local Next.js Google-Maps family-location app over the Home Assistant Li
 - Iterate on prediction/replay
 
 ## Done
+- `?member=<name>` opens the live map on that person, matched case-insensitively and applied once on the first load (`LiveMap.tsx`). The Home Hub's People row links here. Released v1.0.4 and checked live after the Rebuild: the link zooms to the person with their card open (2026-10-25)
 - Release 1 batch-tested and passed by Ryan (2026-10-24), live as add-on v1.0.3:
   - HOME-28: a geofence edit or delete with an empty, bad or out-of-range index is
     refused and no longer changes fence #0
