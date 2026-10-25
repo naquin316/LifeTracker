@@ -136,6 +136,17 @@ export default function LiveMap({
   );
   const selectedLoc = locations.find((l) => l.member === selected) ?? null;
 
+  // `?member=<name>` opens on that person (the Home Hub links here). Case-insensitive:
+  // member strings come from Life360 in mixed case. Applied once, on the first load that has them.
+  const wanted = useRef<string | null>(null);
+  useEffect(() => {
+    wanted.current = new URLSearchParams(window.location.search).get("member")?.toLowerCase() ?? null;
+  }, []);
+  useEffect(() => {
+    const hit = wanted.current && locations.find((l) => l.member.toLowerCase() === wanted.current);
+    if (hit) { setSelected(hit.member); wanted.current = null; }
+  }, [locations]);
+
   return (
     <div className="relative flex min-h-0 flex-1">
       {/* Sidebar: static on desktop, slide-over on mobile */}

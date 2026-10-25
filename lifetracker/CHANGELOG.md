@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.4
+- Open on one person: ?member=<name> selects them (the Home Hub's People row links here)
+
 ## 1.0.3
 - Release 1: geofence edits, errand stays, midnight predictions, long-drive replay, route cache, trip window (HOME-28..33)
 
